@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>PM &amp; Tech Radar</title>
+  <link>https://user.github.io/pm-tech-radar</link>
+  <description>Automated weekly research digest for Product Management, Architecture, and Technical Leadership</description>
+  <lastBuildDate>Thu, 02 Jul 2026 12:10:21 GMT</lastBuildDate>
+  <item>
+    <title>Product &amp; Program Management Digest — 2026-07-02</title>
+    <link>https://user.github.io/pm-tech-radar/#2026-07-02/pm-digest</link>
+    <pubDate>Thu, 02 Jul 2026 12:00:00 GMT</pubDate>
+    <guid>https://user.github.io/pm-tech-radar/#2026-07-02/pm-digest</guid>
+  </item>
+  <item>
+    <title>Architecture &amp; Technical Scoping Digest — 2026-07-02</title>
+    <link>https://user.github.io/pm-tech-radar/#2026-07-02/architecture-digest</link>
+    <pubDate>Thu, 02 Jul 2026 12:00:00 GMT</pubDate>
+    <guid>https://user.github.io/pm-tech-radar/#2026-07-02/architecture-digest</guid>
+  </item>
+  <item>
+    <title>AI &amp; Agent Ecosystem Digest — 2026-07-02</title>
+    <link>https://user.github.io/pm-tech-radar/#2026-07-02/ai-agents-digest</link>
+    <pubDate>Thu, 02 Jul 2026 12:00:00 GMT</pubDate>
+    <guid>https://user.github.io/pm-tech-radar/#2026-07-02/ai-agents-digest</guid>
+  </item>
+  <item>
+    <title>Community &amp; Forum Highlights — 2026-07-02</title>
+    <link>https://user.github.io/pm-tech-radar/#2026-07-02/forum-digest</link>
+    <pubDate>Thu, 02 Jul 2026 12:00:00 GMT</pubDate>
+    <guid>https://user.github.io/pm-tech-radar/#2026-07-02/forum-digest</guid>
+  </item>
+  <item>
+    <title>Weekly Trend Synthesis — 2026-07-02</title>
+    <link>https://user.github.io/pm-tech-radar/#2026-07-02/weekly-rollup</link>
+    <pubDate>Thu, 02 Jul 2026 12:00:00 GMT</pubDate>
+    <guid>https://user.github.io/pm-tech-radar/#2026-07-02/weekly-rollup</guid>
+  </item>
+</channel>
+</rss>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PM & Tech Radar</title>
+  <link rel="alternate" type="application/rss+xml" title="PM & Tech Radar Feed" href="feed.xml">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+    }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --surface: #f6f8fa;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --muted: #656d76;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+    #sidebar {
+      width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+    }
+    #sidebar h1 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+    #sidebar .subtitle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+    .date-group { margin-bottom: 1rem; }
+    .date-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+      cursor: pointer;
+    }
+    .report-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.4rem 0.6rem;
+      margin: 0.15rem 0;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .report-btn:hover { background: var(--border); }
+    .report-btn.active { background: var(--accent); color: #fff; }
+    #content {
+      margin-left: 280px;
+      padding: 2rem 3rem;
+      max-width: 900px;
+      flex: 1;
+    }
+    #content h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    #content h2 { font-size: 1.3rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--accent); }
+    #content h3 { font-size: 1.1rem; margin-top: 1rem; }
+    #content p { line-height: 1.7; margin-bottom: 0.8rem; }
+    #content ul, #content ol { margin-left: 1.5rem; margin-bottom: 0.8rem; }
+    #content li { margin-bottom: 0.3rem; line-height: 1.6; }
+    #content a { color: var(--accent); }
+    #content code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85em; }
+    #content pre { background: var(--surface); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
+    .toolbar {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .toolbar button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .toolbar button:hover { border-color: var(--accent); }
+    .empty-state {
+      color: var(--muted);
+      text-align: center;
+      margin-top: 4rem;
+      font-size: 1rem;
+    }
+    @media (max-width: 768px) {
+      #sidebar { width: 100%; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+      #content { margin-left: 0; padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav id="sidebar">
+    <h1>📡 PM & Tech Radar</h1>
+    <p class="subtitle">Weekly research digest</p>
+    <div id="nav"></div>
+  </nav>
+  <main id="content">
+    <div class="empty-state">
+      <p>Select a report from the sidebar to begin reading.</p>
+      <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">Reports are generated weekly via GitHub Actions.</p>
+    </div>
+  </main>
+  <div class="toolbar">
+    <button onclick="toggleTheme()">🌓</button>
+    <a href="feed.xml" style="text-decoration:none"><button>RSS</button></a>
+  </div>
+
+  <script>
+    const REPORT_LABELS = {
+      'pm-digest': 'Product & Program Mgmt',
+      'architecture-digest': 'Architecture & Scoping',
+      'ai-agents-digest': 'AI & Agents',
+      'forum-digest': 'Community & Forum',
+      'weekly-rollup': '🔮 Weekly Rollup',
+      'monthly-rollup': '📊 Monthly Rollup',
+    };
+
+    let manifest = null;
+
+    async function init() {
+      try {
+        const res = await fetch('manifest.json');
+        manifest = await res.json();
+        buildNav();
+        window.addEventListener('hashchange', loadFromHash);
+        if (location.hash) loadFromHash();
+      } catch (e) {
+        document.getElementById('content').innerHTML = '<div class="empty-state"><p>No manifest.json found. Run the pipeline first.</p></div>';
+      }
+    }
+
+    function buildNav() {
+      const nav = document.getElementById('nav');
+      nav.innerHTML = '';
+      for (const entry of manifest.dates) {
+        const group = document.createElement('div');
+        group.className = 'date-group';
+        group.innerHTML = `<div class="date-label">${entry.date}</div>`;
+        for (const report of entry.reports) {
+          const btn = document.createElement('button');
+          btn.className = 'report-btn';
+          btn.textContent = REPORT_LABELS[report] || report;
+          btn.onclick = () => {
+            location.hash = `${entry.date}/${report}`;
+          };
+          group.appendChild(btn);
+        }
+        nav.appendChild(group);
+      }
+    }
+
+    async function loadFromHash() {
+      const hash = location.hash.slice(1);
+      if (!hash) return;
+      const [date, report] = hash.split('/');
+      if (!date || !report) return;
+
+      // Highlight active button
+      document.querySelectorAll('.report-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.report-btn').forEach(b => {
+        if (b.textContent === (REPORT_LABELS[report] || report)) b.classList.add('active');
+      });
+
+      try {
+        const res = await fetch(`digests/${date}/${report}.md`);
+        if (!res.ok) throw new Error('Not found');
+        const md = await res.text();
+        const html = DOMPurify.sanitize(marked.parse(md));
+        document.getElementById('content').innerHTML = html;
+      } catch (e) {
+        document.getElementById('content').innerHTML = `<div class="empty-state"><p>Report not found: ${date}/${report}</p></div>`;
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    }
+
+    init();
+  </script>
+</body>
+</html>

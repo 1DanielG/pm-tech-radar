@@ -1,0 +1,57 @@
+name: Weekly Digest
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      # Run the full pipeline
+      - name: Generate digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          LLM_PROVIDER: bedrock
+        run: pnpm start
+
+      # Commit generated reports
+      - name: Commit digests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add digests/
+          git diff --cached --quiet || git commit -m "digest: weekly $(date +%Y-%m-%d)"
+          git pull --rebase
+          git push
+
+      # Update manifest and feed
+      - name: Update manifest
+        run: pnpm manifest
+
+      - name: Commit manifest
+        run: |
+          git add manifest.json feed.xml
+          git diff --cached --quiet || git commit -m "chore: update manifest"
+          git push

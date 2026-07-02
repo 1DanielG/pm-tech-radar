@@ -1,0 +1,47 @@
+name: Monthly Rollup
+
+on:
+  schedule:
+    # 1st of every month at 10:00 UTC
+    - cron: '0 10 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate monthly rollup
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          LLM_PROVIDER: bedrock
+        run: pnpm rollup:monthly
+
+      - name: Commit and update manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add digests/
+          git diff --cached --quiet || git commit -m "digest: monthly rollup $(date +%Y-%m-%d)"
+          pnpm manifest
+          git add manifest.json feed.xml
+          git diff --cached --quiet || git commit -m "chore: update manifest"
+          git pull --rebase
+          git push
