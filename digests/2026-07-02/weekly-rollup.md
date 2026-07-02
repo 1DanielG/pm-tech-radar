@@ -4,30 +4,30 @@
 
 ## Cross-Cutting Trends
 
-### 1. AI Execution Is Commoditizing — Infrastructure & Judgment Are the New Moats
-Gusto shipped a full product in 10 weeks with 5 people. Codex's lead says build cost is collapsing. Target replaced rule-based pipelines with LLM ranking. Meanwhile, the Architecture digest warns that *production data infrastructure*, not model selection, is what separates teams that scale from those that fail catastrophically. The pattern: generating code/output is cheap; running it reliably at scale is not.
+### 1. AI Agents Are Exposing Infrastructure Debt at the Stateful Layer
+LangGraph's production bugs (duplicate tool execution, checkpoint bloat, lost state on cancellation) mirror the Architecture digest's warning: *model serving is solved; stateful data systems under agentic load are not.* Gusto's no-docs sprint model works for greenfield — but the moment agents touch persistent state at scale, you hit exactly these failure modes.
 
-**So what?** Stop allocating review cycles to "which model should we use" and start stress-testing your data layer, checkpoint durability, and observability stack. Your architecture risk is now downstream of the model, not in it.
+**So what?** Don't evaluate agentic tooling on demo performance. Your real evaluation criterion is checkpoint reliability, state recovery guarantees, and cost of duplicate side effects. Treat the data/persistence layer as the blast radius, not the model layer.
 
-### 2. Agentic Workflows Have a Production Reliability Gap
-LangGraph's active bug queue this week is a microcosm of the industry: silent tool re-execution, state loss on cancellation, infinite loops on minor version bumps, 85% checkpoint storage bloat. These aren't edge cases — they're fundamental durability and idempotency failures in production agent infrastructure.
+### 2. Cost Discipline Is Becoming an Architecture Constraint, Not an Afterthought
+Lambda MicroVMs at 9× Fargate spot pricing and LangGraph's 85% checkpoint storage bloat both point to the same pattern: powerful new primitives with hidden unit economics that only surface at production scale.
 
-**So what?** Any team shipping agents into production needs explicit contracts around: (a) idempotency for all tool calls, (b) checkpoint recovery semantics, (c) version-pinning discipline. Treat agent orchestration with the same failure-mode rigor as distributed systems. If you're using LangGraph Cloud, the 180s silent re-dispatch bug is a live production risk right now.
+**So what?** Any AI infrastructure decision made today on "it works" grounds will need a cost renegotiation at scale. Build explicit cost checkpoints (per-agent, per-session, per-checkpoint) into architecture reviews before adoption, not after the bill arrives.
 
 ---
 
 ## Action Items
 
-1. **Audit your agent tool calls for idempotency this sprint.** The LangGraph silent re-execution bug is a symptom of a broader assumption failure — most teams haven't designed tool calls to be safely re-run. Map which calls have side effects and add guard logic before the framework forces the issue.
+1. **Run a LangGraph production-readiness audit this sprint.** Specifically: map every slow tool call (>60s) to the re-execution bug (#7417), assess whether checkpoint backends use msgpack (serialization failure), and quantify current checkpoint storage overhead. If you're pre-production, this shapes your go/no-go criteria. If you're live, this is a P1 risk review.
 
-2. **Run a "process artifact" cost-benefit on your current PM workflow.** Gusto's 10-week, no-Jira, no-Figma ship is an outlier but a useful stress test. Pick one upcoming initiative and explicitly list every artifact (PRD, ticket, spec) — challenge each one: does this reduce coordination cost or create it? Kill or automate at least two.
+2. **Build an internal model evaluation framework — steal from the Sonnet 5 benchmark structure.** Identify 3–5 real tasks your team runs on AI (PRD drafts, scope breakdowns, test generation), run blind evals across 2–3 models, and document results. Stop making model-selection decisions based on vendor benchmarks. This takes one engineer one day and pays for itself in avoided lock-in.
 
-3. **Benchmark your AI tooling with task-specific evals, not vibes.** The Claude Sonnet 5 blind benchmark across 64 structured generations is the right methodology. Before your next tooling decision, define 5-10 representative tasks, run outputs blind, score against criteria. One afternoon of structured eval beats months of anecdote-driven debate.
+3. **Price out Lambda MicroVMs vs. Fargate spot for your most likely agentic isolation use case.** The isolation guarantee is genuinely useful for multi-tenant AI workloads — but $3.03/day/session changes the product math on per-user AI features. Get a concrete number tied to your projected session volume before it shows up in a roadmap commitment.
 
 ---
 
 ## Weak Signals
 
-**Per-session VM isolation as a default compute primitive.** AWS Lambda MicroVMs (Firecracker, 8hr state, hardware isolation) are currently cost-prohibitive at ~$3/day, but the architectural pattern — one isolated VM per agent session — is significant. If pricing drops 5-10× (plausible in 12-18 months given GPU/compute trends), this becomes the obvious substrate for stateful, secure agent workloads. Worth watching: teams that design agent session boundaries *now* will be positioned to adopt this without a rearchitecture.
+**Apple running Private Cloud Compute on Google Cloud** is easy to read as an infrastructure footnote. It's not. It signals that confidential compute for AI is becoming a cross-cloud, vendor-agnostic capability — which in 3–6 months likely translates to enterprise buyer requirements ("our AI workloads must run in attestable hardware enclaves") becoming standard procurement checklist items. If your product handles sensitive data and uses cloud AI, start tracking what your attestation story would be.
 
-**LangGraph v1 API breaking changes incoming.** The 84-comment roadmap thread with core team soliciting `StateGraph` API feedback is a pre-signal of a significant interface change. If your team has production LangGraph dependencies, monitor that thread actively — being caught by a breaking change in a critical orchestration layer mid-quarter is a painful and avoidable interrupt.
+**LangGraph v1 API redesign (84-comment roadmap thread)** is a signal that the current `StateGraph` primitives are not considered stable by the maintainers themselves. Teams building production agents on current LangGraph APIs are accepting API migration risk within a 6-month horizon. Worth either contributing to that thread to shape the API toward your use cases, or building a thin abstraction layer now so a v1 breaking change doesn't propagate through your codebase.

@@ -1,6 +1,6 @@
 import type { LlmProvider } from "./types.js";
 
-const DEFAULT_MODEL = "us.anthropic.claude-3-5-haiku-20241022";
+const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6";
 const DEFAULT_REGION = "us-east-1";
 
 /**

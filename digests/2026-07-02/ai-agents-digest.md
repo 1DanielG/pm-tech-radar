@@ -6,41 +6,48 @@
 
 ## LangGraph
 
-**High-engagement issues dominating the week — most activity concentrated here.**
-
 ### 🗺️ v1 Roadmap Discussion (84 comments)
-The most active thread of the week. Core team member @sydney-runkle opened a public feedback issue on the LangGraph v1 roadmap, specifically soliciting input on the low-level `StateGraph` API. Strong community signal worth watching for upcoming breaking changes.
+The team opened a community feedback thread for **LangGraph v1**, soliciting input on the low-level `StateGraph` API and related primitives. Highest-engagement issue this week — worth following if you have opinions on graph API design.
 
-### 🐛 Critical Cloud Bug: Long Tool Calls Silently Re-executed (45 comments)
-High-priority production issue: tool calls exceeding ~180s on LangGraph Cloud are silently re-dispatched from the last checkpoint while the original execution is still running, causing duplicate side effects. A related follow-up issue was filed around `BG_JOB_SHUTDOWN_GRACE_PERIOD_SECS` not being respected. No confirmed fix yet.
+### 🐛 High-Impact Bugs
 
-### 🐛 Postgres Checkpoint SSL Errors (51 comments)
-`langgraph-checkpoint-postgres` users hitting persistent `psycopg.OperationalError: SSL error: bad length` across multiple versions. High comment volume suggests widespread impact; no resolution confirmed.
+**Long tool calls silently re-executed on Cloud** (`#7417`, 45+ comments)
+Tool calls exceeding ~180s are being re-dispatched from the last checkpoint while the original execution is still running, causing **duplicate side effects**. A related follow-up issue confirms `BG_JOB_SHUTDOWN_GRACE_PERIOD_SECS` does not prevent this. Critical for production deployments with slow tools.
 
-### 🐛 Run Cancellation Loses Unpersistedstate (25 comments)
-Bug where cancelling a run drops streamed state that hasn't yet been written to a checkpoint. Meaningful data-loss scenario for production workflows.
+**Postgres checkpoint SSL errors** (51 comments)
+`langgraph-checkpoint-postgres` throwing `psycopg.OperationalError: SSL error: bad length` across multiple versions. Wide community reproduction suggests a regression in the postgres checkpoint adapter.
 
-### 🐛 Agent Infinite Loop in v1.0.6 (24 comments)
-Regression report: agents loop until hitting the recursion limit in LangGraph 1.0.6. Flagged `pending` — likely a version-specific issue worth verifying before upgrading.
+**Run cancellation loses unsynced streamed state** (25 comments)
+Cancelling a run drops streamed state that hasn't yet been persisted as a checkpoint — no recovery path currently exists.
 
-### ⚠️ Checkpoint Serialization Bloat (19 comments)
-User-filed bug with reproducible benchmarks claiming 85% storage overhead and ~38% token overhead from checkpoint serialization, with no opt-out path provided. Includes a proposed drop-in fix — worth tracking if the team engages.
+**Agent infinite looping in v1.0.6** (24 comments)
+Regression report: agents loop until hitting the recursion limit. Flagged as `pending` — unclear if root-caused yet.
 
-### 🔧 Notable PRs Merged/Opened
-- **`AsyncPostgresSaver.from_conn_string` connection lifetime fix** — context manager was closing the DB connection prematurely on exit. Correctness fix for async Postgres checkpoint users.
-- **`langchain-core` minimum version bumped** — `langgraph-checkpoint` now requires `>=1.2.5` (up from `>=0.2.38`). **Potential breaking change** for users pinned to older `langchain-core`.
-- **`NamedBarrierValue` type annotation fix** — `self.seen` was typed as `set[str]` instead of `set[Value]`; accompanying unit tests added.
-- **`get_config()` async guard fix on Python < 3.11** — silent swallowing of `RuntimeError` meant the async guard never fired on older Python versions.
+**AIMessage msgpack serialization failure** (23 comments)
+`TypeError: Type is not msgpack serializable: AIMessage` blocking users on checkpoint backends that use msgpack encoding.
 
-### 💬 Notable Feature Discussions
-- **`ApprovalNode` for Human-in-the-Loop** (19 comments) — community request for a higher-level built-in abstraction for approval gates.
-- **Cryptographic action receipts / audit provenance** (18 + 23 comments across two issues) — emerging community interest in tamper-evident execution logs; no official response yet.
-- **Trust-gated checkpoints / governance nodes** (25 comments) — Microsoft `agent-governance-toolkit` team proposing a formal integration adapter.
+**Checkpoint serialization bloat** (19 comments)
+Community-reported 85% storage overhead and 37.8% token overhead with no opt-out path. Reporter includes a proposed drop-in fix — worth watching for a follow-up PR.
+
+### 🔧 Fixes Merged/Proposed
+
+- **`AsyncPostgresSaver.from_conn_string` connection leak** — async context managers were closing the DB connection on context exit; fix keeps connection alive.
+- **`NamedBarrierValue` type annotation** — `self.seen: set[str]` corrected to `set[Value]` to match the generic type parameter.
+- **`get_config()` async guard on Python < 3.11** — `RuntimeError` was being silently swallowed, causing the guard to never fire in async contexts.
+- **`langgraph-checkpoint` min `langchain-core` bumped** to `>=1.2.5` to resolve a dependency compatibility regression.
 
 ### ⚡ Performance Flag
-`FuturesDict.on_done` identified as O(n²) in task count — re-scans all completed futures on every callback. No comments yet but worth watching if you run high-parallelism graphs.
+`FuturesDict.on_done` in `pregel/_runner.py` identified as **O(n²)** — re-scans all completed futures on every callback. No fix yet, but worth tracking for large parallel graphs.
+
+### 💡 Feature Requests / Proposals
+- **Cryptographic action receipts** for provable agent execution (18 comments) — community interest in auditable, signed node-level logs.
+- **`ApprovalNode` for Human-in-the-Loop** (19 comments) — request for a higher-level abstraction over the current interrupt pattern.
+- **Trust-gated checkpoints** — external governance integration proposal referencing Microsoft's Agent Governance Toolkit.
+
+### 📝 Docs Gap
+`context_schema` parameter in `create_react_agent` has an empty docstring body — minor but affects discoverability.
 
 ---
 
-> **Bottom line:** LangGraph is under heavy production stress this week — Postgres reliability, cloud re-execution bugs, and serialization overhead are the top operator concerns. The v1 roadmap thread is the strategic one to follow.
+> **Key themes this week:** Checkpoint reliability (Postgres SSL, serialization bloat, cancellation loss) and Cloud execution correctness (duplicate tool runs) are the dominant pain points. The v1 roadmap thread is the community focal point for API direction.
 
