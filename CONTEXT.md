@@ -68,12 +68,22 @@ Keywords: "product management", "technical architecture", "system design", "AI a
 
 ## Schedule
 
+**MVP Phase: Manual runs** — run locally each Monday, review output, customize prompts/sources, then push to GitHub.
+
+```powershell
+cd c:\repos\Kiro-work\projects\pm-tech-radar
+$env:AWS_REGION = "us-east-1"
+npx tsx src/index.ts
+npx tsx src/generate-manifest.ts
+git add -A ; git commit -m "digest: weekly $(Get-Date -Format yyyy-MM-dd)" ; git push
+```
+
+**Future (after stabilization):** Enable GitHub Actions cron with AWS secrets for fully automated weekly runs.
+
 | Frequency | When | What |
 |-----------|------|------|
-| Weekly | Monday 08:00 UTC | Full pipeline: fetch + summarize + compare |
-| Monthly | 1st of month | Rollup of weekly reports into strategic trends |
-
-Starting weekly (not daily) to keep noise low and costs minimal.
+| Weekly | Monday (manual for now) | Full pipeline: fetch + summarize + compare |
+| Monthly | 1st of month (manual for now) | Rollup of weekly reports into strategic trends |
 
 ---
 
@@ -176,32 +186,55 @@ pm-tech-radar/
 
 ---
 
+## Live URLs
+
+| Channel | URL |
+|---------|-----|
+| **GitHub repo** | https://github.com/1DanielG/pm-tech-radar |
+| **Web UI** | https://1danielg.github.io/pm-tech-radar/ |
+| **RSS feed** | https://1danielg.github.io/pm-tech-radar/feed.xml |
+
+---
+
 ## Cost Estimate
 
 | Item | Monthly cost |
 |------|-------------|
 | GitHub Actions | Free (public repo) |
-| OpenRouter (4 weekly runs + 1 monthly) | ~$1-2 |
+| AWS Bedrock Haiku (4 weekly runs + 1 monthly) | ~$0.10-0.50 (Haiku is very cheap) |
 | GitHub Pages hosting | Free |
-| **Total** | **~$1-2/month** |
+| **Total** | **< $1/month** |
 
 ---
 
 ## MVP Milestones
 
-| # | Milestone | Deliverable |
-|---|-----------|-------------|
-| 1 | Project scaffolding | package.json, tsconfig, folder structure, config.yml |
-| 2 | RSS fetcher | Fetch + parse RSS/Atom feeds, return structured items |
-| 3 | GitHub fetcher | Fetch recent issues/PRs/releases for configured repos |
-| 4 | HN fetcher | Fetch + filter HN stories by keywords |
-| 5 | LLM provider | OpenRouter provider + factory + retry logic |
-| 6 | Summarizer | Per-source LLM summaries |
-| 7 | Report builder | Assemble Markdown reports |
-| 8 | Manifest generator | Scan digests/ → manifest.json + feed.xml |
-| 9 | Web UI | Single-file SPA reading manifest + Markdown |
-| 10 | GitHub Actions | Weekly cron workflow |
-| 11 | First live run | End-to-end: sources → digest → published |
+| # | Milestone | Status |
+|---|-----------|--------|
+| 1 | Project scaffolding | ✅ Done |
+| 2 | RSS fetcher | ✅ Done |
+| 3 | GitHub fetcher | ✅ Done |
+| 4 | HN fetcher | ✅ Done (0 results — needs keyword tuning) |
+| 5 | LLM provider (Bedrock) | ✅ Done (Haiku default, Sonnet via env override) |
+| 6 | Summarizer | ✅ Done |
+| 7 | Report builder | ✅ Done |
+| 8 | Manifest generator | ✅ Done |
+| 9 | Web UI | ✅ Done (GitHub Pages live) |
+| 10 | GitHub repo + Pages | ✅ Done — https://github.com/1DanielG/pm-tech-radar |
+| 11 | First live run | ✅ Done — 2026-07-02 digest generated and published |
+
+## Next Steps
+
+| # | Task | Priority |
+|---|------|----------|
+| 1 | **Tune HN keywords** — current keywords return 0 results. Try shorter terms ("AI agents", "system design", "product management") | High |
+| 2 | **Customize prompts** — review digest quality over 2-3 weeks, refine prompt instructions | High |
+| 3 | **Add/remove sources** — edit config.yml based on what's actually useful vs noise | Medium |
+| 4 | **Fix Anthropic sitemap** — currently skipped (type: sitemap needs dedicated parser) | Medium |
+| 5 | **Automate via GitHub Actions** — add AWS secrets to repo, enable cron | After stabilization |
+| 6 | **Monthly rollup** — run manually after 4+ weekly digests exist | After 4 weeks |
+| 7 | **Telegram notifications** — optional push channel | Low / future |
+| 8 | **MCP server** — query radar from Kiro chat | Low / future |
 
 ---
 
