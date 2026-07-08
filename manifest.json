@@ -1,6 +1,16 @@
 {
-  "generated": "2026-07-02T12:35:19.837Z",
+  "generated": "2026-07-08T07:47:12.614Z",
   "dates": [
+    {
+      "date": "2026-07-08",
+      "reports": [
+        "pm-digest",
+        "architecture-digest",
+        "ai-agents-digest",
+        "forum-digest",
+        "weekly-rollup"
+      ]
+    },
     {
       "date": "2026-07-02",
       "reports": [
